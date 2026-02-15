@@ -24,12 +24,22 @@ mount none -t devpts /dev/pts
 export HOME=/root
 export LC_ALL=C
 
-# Depoları güncelle ve eski PC'ler için hafif paketleri kur
+# DEPOLARI GENISLET (xubuntu-core'un bulunmasi icin Universe sart)
+echo "deb http://archive.ubuntu.com/ubuntu noble main restricted universe multiverse" > /etc/apt/sources.list
+echo "deb http://archive.ubuntu.com/ubuntu noble-updates main restricted universe multiverse" >> /etc/apt/sources.list
+echo "deb http://archive.ubuntu.com/ubuntu noble-security main restricted universe multiverse" >> /etc/apt/sources.list
+
 apt-get update
-# casper: Canlı USB'den calistirmak icin sart
-# xubuntu-core: XFCE'nin en hafif, gereksiz programlardan arindirilmis hali
-# network-manager: Wi-Fi ve internet baglantisi icin
-DEBIAN_FRONTEND=noninteractive apt-get install -y linux-generic casper xubuntu-core network-manager nano
+
+# Paketleri kur (Eski PC'ler icin en hafif set)
+DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    linux-generic \
+    casper \
+    xubuntu-core \
+    network-manager \
+    net-tools \
+    nano \
+    sudo
 
 # Temizlik yap (ISO boyutu kucuk olsun)
 apt-get clean
@@ -47,15 +57,18 @@ echo "Kernel kopyalaniyor..."
 cp work/chroot/boot/vmlinuz-* work/iso/casper/vmlinuz
 cp work/chroot/boot/initrd.img-* work/iso/casper/initrd
 
-# 5. Sistemi SquashFS ile sıkıştır (Bu işlem biraz sürer)
-echo "Dosya sistemi sikistiriliyor..."
+# 5. Sistemi SquashFS ile sıkıştır
+echo "Dosya sistemi sikistiriliyor (Bu vakit alabilir)..."
 mksquashfs work/chroot work/iso/casper/filesystem.squashfs -noappend
 
 # 6. Başlatıcı (GRUB) ayarlarını yap
 echo "Boot menusu ayarlaniyor..."
 cat <<EOF > work/iso/boot/grub/grub.cfg
-menuentry "mcbra OS - Eski PC'leri Ucuran Sistem" {
-    linux /casper/vmlinuz boot=casper quiet splash
+set default=0
+set timeout=5
+
+menuentry "mcbra OS - Eski PC Canavari" {
+    linux /casper/vmlinuz boot=casper quiet splash ---
     initrd /casper/initrd
 }
 EOF
@@ -64,4 +77,4 @@ EOF
 echo "ISO Dosyasi olusturuluyor..."
 grub-mkrescue -o output/mcbra-Distro.iso work/iso
 
-echo "=== Derleme Basariyla Tamamlandi! ==="
+echo "=== DERLEME BASARIYLA TAMAMLANDI! ==="
