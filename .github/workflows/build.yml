@@ -1,0 +1,31 @@
+name: Ozel Ubuntu Distromu Derle
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-iso:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Kodları Sunucuya Çek
+      uses: actions/checkout@v4
+
+    - name: ISO Yapım Araçlarını Yükle
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools
+
+    - name: Derleme Senaryosunu Calistir
+      run: |
+        chmod +x build.sh
+        sudo ./build.sh
+        
+    - name: Hazir ISO Dosyasini Indirilebilir Yap
+      uses: actions/upload-artifact@v4
+      with:
+        name: mcbra-Distro-AMD64
+        path: output/*.iso
+        compression-level: 0
