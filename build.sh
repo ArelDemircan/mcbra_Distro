@@ -27,11 +27,24 @@ echo "deb http://archive.ubuntu.com/ubuntu noble-security main restricted univer
 
 apt-get update
 
-# Temel XFCE + AĞ + EKSTRA PROGRAMLAR + DİL PAKETLERİ EKLENDİ
+# PPA ekleyebilmek için gerekli temel paket
+DEBIAN_FRONTEND=noninteractive apt-get install -y software-properties-common
+
+# Firefox'un Snap yerine hızlı olan DEB sürümünü kurmak için Mozilla deposunu ekliyoruz
+add-apt-repository -y ppa:mozillateam/ppa
+cat << 'FIREFOXEOF' > /etc/apt/preferences.d/mozilla-firefox
+Package: firefox*
+Pin: release o=LP-PPA-mozillateam
+Pin-Priority: 1001
+FIREFOXEOF
+apt-get update
+
+# Temel XFCE + AĞ + DİL PAKETLERİ + FIREFOX + LIBREOFFICE WRITER + PLYMOUTH (Boot Ekranı)
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     linux-generic casper xubuntu-core network-manager nano sudo curl \
     htop vlc mousepad ristretto pavucontrol thunar-archive-plugin xz-utils \
-    locales keyboard-configuration tzdata
+    locales keyboard-configuration tzdata \
+    libreoffice-writer firefox plymouth plymouth-theme-ubuntu-text
 
 # --- TÜRKÇE DİL, SAAT VE KLAVYE AYARLARI ---
 locale-gen tr_TR.UTF-8
@@ -60,9 +73,12 @@ INNEREOF
 mkdir -p /usr/share/backgrounds/mcbra
 mkdir -p /usr/share/xfce4/backdrops/
 curl -o /usr/share/backgrounds/mcbra/wallpaper.jpg https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop
-
-# İndirdiğimiz duvar kağıdını Xubuntu'nun varsayılan dosyası gibi gösteriyoruz
 ln -sf /usr/share/backgrounds/mcbra/wallpaper.jpg /usr/share/xfce4/backdrops/xubuntu-wallpaper.png
+
+# 3. Boot (Açılış) Ekranını Özelleştirme ("Ubuntu" yerine "mcbra" yazacak)
+sed -i 's/Ubuntu/mcbra/g' /usr/share/plymouth/themes/ubuntu-text/ubuntu-text.plymouth
+# Değişikliklerin açılış çekirdeğine (initramfs) işlenmesi için güncelliyoruz:
+update-initramfs -u
 
 # --- KİŞİSELLEŞTİRME BİTİŞİ ---
 
@@ -78,7 +94,7 @@ chmod +x work/chroot/install.sh
 chroot work/chroot /install.sh
 rm work/chroot/install.sh
 
-# 4. Kernel kopyala (Daha güvenli yöntem)
+# 4. Kernel kopyala
 echo "3. Kernel kopyalaniyor..."
 cp $(ls work/chroot/boot/vmlinuz-* | sort -V | tail -n 1) work/iso/casper/vmlinuz
 cp $(ls work/chroot/boot/initrd.img-* | sort -V | tail -n 1) work/iso/casper/initrd
@@ -87,7 +103,7 @@ cp $(ls work/chroot/boot/initrd.img-* | sort -V | tail -n 1) work/iso/casper/ini
 echo "4. Maksimum Sikistirma Uygulaniyor (Sabriniz icin tesekkurler)..."
 mksquashfs work/chroot work/iso/casper/filesystem.squashfs -comp xz -noappend
 
-# 6. Boot ayarı (Kullanıcı adı, dil ve auto-login parametreleri eklendi)
+# 6. Boot ayarı (Açılış logosu için 'splash' parametresi aktif)
 echo "5. GRUB Boot Ayarlari Yapilandiriliyor..."
 cat << 'EOF' > work/iso/boot/grub/grub.cfg
 set timeout=5
