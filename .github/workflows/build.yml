@@ -1,4 +1,4 @@
-name: Ozel Ubuntu Distromu Derle
+name: Ozel Ubuntu Distromu Derle ve Yayinla
 
 on:
   push:
@@ -9,11 +9,15 @@ jobs:
   build-iso:
     runs-on: ubuntu-latest
     
+    # GitHub'ın Sürüm (Release) oluşturabilmesi için zorunlu izin
+    permissions:
+      contents: write 
+
     steps:
-    - name: Kodları Sunucuya Çek
+    - name: Kodlari Sunucuya Cek
       uses: actions/checkout@v4
 
-    - name: ISO Yapım Araçlarını Yükle
+    - name: ISO Yapim Araclarini Yukle
       run: |
         sudo apt-get update
         sudo apt-get install -y debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools
@@ -23,9 +27,11 @@ jobs:
         chmod +x build.sh
         sudo ./build.sh
         
-    - name: Hazir ISO Dosyasini Indirilebilir Yap
-      uses: actions/upload-artifact@v4
+    - name: Hazir ISO'yu Tam Hizda Indirmek Icin Yayinla (Release)
+      uses: softprops/action-gh-release@v2
       with:
-        name: mcbra-Distro-AMD64
-        path: output/*.iso
-        compression-level: 0
+        # Her derlemede otomatik yeni bir numara atar
+        tag_name: "v1.0.${{ github.run_number }}"
+        name: "mcbra OS - Hızlı İndirme (Derleme #${{ github.run_number }})"
+        body: "Otomatik derlenmiş en güncel mcbra_Distro ISO dosyası. Artifact limitine takılmadan tam hızda indirebilirsiniz."
+        files: output/*.iso
